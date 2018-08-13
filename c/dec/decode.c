@@ -6,7 +6,7 @@
 
 #include <brotli/decode.h>
 
-#ifdef __ARM_NEON__
+#if defined(__ARM_NEON__)
 #include <arm_neon.h>
 #endif
 
@@ -189,7 +189,7 @@ static BROTLI_NOINLINE BrotliDecoderErrorCode DecodeVarLenUint8(
         *value = 0;
         return BROTLI_DECODER_SUCCESS;
       }
-      /* No break, transit to the next state. */
+    /* Fall through. */
 
     case BROTLI_STATE_DECODE_UINT8_SHORT:
       if (BROTLI_PREDICT_FALSE(!BrotliSafeReadBits(br, 3, &bits))) {
@@ -203,7 +203,7 @@ static BROTLI_NOINLINE BrotliDecoderErrorCode DecodeVarLenUint8(
       }
       /* Use output value as a temporary storage. It MUST be persisted. */
       *value = bits;
-      /* No break, transit to the next state. */
+    /* Fall through. */
 
     case BROTLI_STATE_DECODE_UINT8_LONG:
       if (BROTLI_PREDICT_FALSE(!BrotliSafeReadBits(br, *value, &bits))) {
@@ -240,7 +240,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
           break;
         }
         s->substate_metablock_header = BROTLI_STATE_METABLOCK_HEADER_EMPTY;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_EMPTY:
         if (!BrotliSafeReadBits(br, 1, &bits)) {
@@ -251,7 +251,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
           return BROTLI_DECODER_SUCCESS;
         }
         s->substate_metablock_header = BROTLI_STATE_METABLOCK_HEADER_NIBBLES;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_NIBBLES:
         if (!BrotliSafeReadBits(br, 2, &bits)) {
@@ -265,7 +265,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
           break;
         }
         s->substate_metablock_header = BROTLI_STATE_METABLOCK_HEADER_SIZE;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_SIZE:
         i = s->loop_counter;
@@ -281,7 +281,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
         }
         s->substate_metablock_header =
             BROTLI_STATE_METABLOCK_HEADER_UNCOMPRESSED;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_UNCOMPRESSED:
         if (!s->is_last_metablock) {
@@ -302,7 +302,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
           return BROTLI_FAILURE(BROTLI_DECODER_ERROR_FORMAT_RESERVED);
         }
         s->substate_metablock_header = BROTLI_STATE_METABLOCK_HEADER_BYTES;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_BYTES:
         if (!BrotliSafeReadBits(br, 2, &bits)) {
@@ -314,7 +314,7 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE DecodeMetaBlockLength(
         }
         s->size_nibbles = (uint8_t)bits;
         s->substate_metablock_header = BROTLI_STATE_METABLOCK_HEADER_METADATA;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER_METADATA:
         i = s->loop_counter;
@@ -516,7 +516,8 @@ static BROTLI_INLINE void ProcessSingleCodeLength(uint32_t code_len,
     *prev_code_len = code_len;
     *space -= 32768U >> code_len;
     code_length_histo[code_len]++;
-    BROTLI_LOG(("[ReadHuffmanCode] code_length[%d] = %d\n", *symbol, code_len));
+    BROTLI_LOG(("[ReadHuffmanCode] code_length[%d] = %d\n",
+        (int)*symbol, (int)code_len));
   }
   (*symbol)++;
 }
@@ -561,7 +562,7 @@ static BROTLI_INLINE void ProcessRepeatedCodeLength(uint32_t code_len,
     return;
   }
   BROTLI_LOG(("[ReadHuffmanCode] code_length[%d..%d] = %d\n",
-              *symbol, *symbol + repeat_delta - 1, *repeat_code_len));
+      (int)*symbol, (int)(*symbol + repeat_delta - 1), (int)*repeat_code_len));
   if (*repeat_code_len != 0) {
     unsigned last = *symbol + repeat_delta;
     int next = next_symbol[*repeat_code_len];
@@ -756,7 +757,7 @@ static BrotliDecoderErrorCode ReadHuffmanCode(uint32_t alphabet_size,
           s->substate_huffman = BROTLI_STATE_HUFFMAN_COMPLEX;
           continue;
         }
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_SIMPLE_SIZE:
         /* Read symbols, codes & code lengths directly. */
@@ -765,7 +766,7 @@ static BrotliDecoderErrorCode ReadHuffmanCode(uint32_t alphabet_size,
           return BROTLI_DECODER_NEEDS_MORE_INPUT;
         }
         s->sub_loop_counter = 0;
-        /* No break, transit to the next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_SIMPLE_READ: {
         BrotliDecoderErrorCode result =
@@ -773,8 +774,8 @@ static BrotliDecoderErrorCode ReadHuffmanCode(uint32_t alphabet_size,
         if (result != BROTLI_DECODER_SUCCESS) {
           return result;
         }
-        /* No break, transit to the next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_SIMPLE_BUILD: {
         uint32_t table_size;
@@ -818,8 +819,8 @@ static BrotliDecoderErrorCode ReadHuffmanCode(uint32_t alphabet_size,
         s->repeat_code_len = 0;
         s->space = 32768;
         s->substate_huffman = BROTLI_STATE_HUFFMAN_LENGTH_SYMBOLS;
-        /* No break, transit to the next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_LENGTH_SYMBOLS: {
         uint32_t table_size;
@@ -832,7 +833,7 @@ static BrotliDecoderErrorCode ReadHuffmanCode(uint32_t alphabet_size,
         }
 
         if (s->space != 0) {
-          BROTLI_LOG(("[ReadHuffmanCode] space = %d\n", s->space));
+          BROTLI_LOG(("[ReadHuffmanCode] space = %d\n", (int)s->space));
           return BROTLI_FAILURE(BROTLI_DECODER_ERROR_FORMAT_HUFFMAN_SPACE);
         }
         table_size = BrotliBuildHuffmanTable(
@@ -996,7 +997,7 @@ static BrotliDecoderErrorCode DecodeContextMap(uint32_t context_map_size,
         return BROTLI_DECODER_SUCCESS;
       }
       s->substate_context_map = BROTLI_STATE_CONTEXT_MAP_READ_PREFIX;
-      /* No break, continue to next state. */
+    /* Fall through. */
 
     case BROTLI_STATE_CONTEXT_MAP_READ_PREFIX: {
       uint32_t bits;
@@ -1014,8 +1015,8 @@ static BrotliDecoderErrorCode DecodeContextMap(uint32_t context_map_size,
       }
       BROTLI_LOG_UINT(s->max_run_length_prefix);
       s->substate_context_map = BROTLI_STATE_CONTEXT_MAP_HUFFMAN;
-      /* No break, continue to next state. */
     }
+    /* Fall through. */
 
     case BROTLI_STATE_CONTEXT_MAP_HUFFMAN: {
       uint32_t alphabet_size = *num_htrees + s->max_run_length_prefix;
@@ -1024,8 +1025,8 @@ static BrotliDecoderErrorCode DecodeContextMap(uint32_t context_map_size,
       if (result != BROTLI_DECODER_SUCCESS) return result;
       s->code = 0xFFFF;
       s->substate_context_map = BROTLI_STATE_CONTEXT_MAP_DECODE;
-      /* No break, continue to next state. */
     }
+    /* Fall through. */
 
     case BROTLI_STATE_CONTEXT_MAP_DECODE: {
       uint32_t context_index = s->context_index;
@@ -1073,8 +1074,8 @@ static BrotliDecoderErrorCode DecodeContextMap(uint32_t context_map_size,
           } while (--reps);
         }
       }
-      /* No break, continue to next state. */
     }
+    /* Fall through. */
 
     case BROTLI_STATE_CONTEXT_MAP_TRANSFORM: {
       uint32_t bits;
@@ -1362,8 +1363,8 @@ static BrotliDecoderErrorCode BROTLI_NOINLINE CopyUncompressedBlockToOutput(
           return BROTLI_DECODER_NEEDS_MORE_INPUT;
         }
         s->substate_uncompressed = BROTLI_STATE_UNCOMPRESSED_WRITE;
-        /* No break, continue to next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_UNCOMPRESSED_WRITE: {
         BrotliDecoderErrorCode result;
@@ -2102,7 +2103,7 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
           break;
         }
         s->state = BROTLI_STATE_INITIALIZE;
-        /* No break, continue to next state */
+      /* Fall through. */
 
       case BROTLI_STATE_INITIALIZE:
         BROTLI_LOG_UINT(s->window_bits);
@@ -2121,13 +2122,13 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
             s->block_type_trees + 3 * BROTLI_HUFFMAN_MAX_SIZE_258;
 
         s->state = BROTLI_STATE_METABLOCK_BEGIN;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_BEGIN:
         BrotliDecoderStateMetablockBegin(s);
         BROTLI_LOG_UINT(s->pos);
         s->state = BROTLI_STATE_METABLOCK_HEADER;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_METABLOCK_HEADER:
         result = DecodeMetaBlockLength(s, br);  /* Reads 2 - 31 bits. */
@@ -2202,7 +2203,7 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
           break;
         }
         s->state = BROTLI_STATE_HUFFMAN_CODE_1;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_CODE_1: {
         uint32_t alphabet_size = s->num_block_types[s->loop_counter] + 2;
@@ -2211,8 +2212,8 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
             &s->block_type_trees[tree_offset], NULL, s);
         if (result != BROTLI_DECODER_SUCCESS) break;
         s->state = BROTLI_STATE_HUFFMAN_CODE_2;
-        /* No break, continue to next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_CODE_2: {
         uint32_t alphabet_size = BROTLI_NUM_BLOCK_LEN_SYMBOLS;
@@ -2221,8 +2222,8 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
             &s->block_len_trees[tree_offset], NULL, s);
         if (result != BROTLI_DECODER_SUCCESS) break;
         s->state = BROTLI_STATE_HUFFMAN_CODE_3;
-        /* No break, continue to next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_HUFFMAN_CODE_3: {
         int tree_offset = s->loop_counter * BROTLI_HUFFMAN_MAX_SIZE_26;
@@ -2258,8 +2259,8 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
         }
         s->loop_counter = 0;
         s->state = BROTLI_STATE_CONTEXT_MODES;
-        /* No break, continue to next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_CONTEXT_MODES:
         result = ReadContextModes(s);
@@ -2267,7 +2268,7 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
           break;
         }
         s->state = BROTLI_STATE_CONTEXT_MAP_1;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_CONTEXT_MAP_1:
         result = DecodeContextMap(
@@ -2278,13 +2279,13 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
         }
         DetectTrivialLiteralBlockTypes(s);
         s->state = BROTLI_STATE_CONTEXT_MAP_2;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_CONTEXT_MAP_2: {
         uint32_t num_direct_codes =
             s->num_direct_distance_codes - BROTLI_NUM_DISTANCE_SHORT_CODES;
         uint32_t num_distance_codes = BROTLI_DISTANCE_ALPHABET_SIZE(
-            num_direct_codes, s->distance_postfix_bits,
+            s->distance_postfix_bits, num_direct_codes,
             (s->large_window ? BROTLI_LARGE_MAX_DISTANCE_BITS :
                                BROTLI_MAX_DISTANCE_BITS));
         uint32_t max_distance_symbol = (s->large_window ?
@@ -2313,8 +2314,8 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
         }
         s->loop_counter = 0;
         s->state = BROTLI_STATE_TREE_GROUP;
-        /* No break, continue to next state. */
       }
+      /* Fall through. */
 
       case BROTLI_STATE_TREE_GROUP: {
         HuffmanTreeGroup* hgroup = NULL;
@@ -2342,8 +2343,11 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
       }
 
       case BROTLI_STATE_COMMAND_BEGIN:
+      /* Fall through. */
       case BROTLI_STATE_COMMAND_INNER:
+      /* Fall through. */
       case BROTLI_STATE_COMMAND_POST_DECODE_LITERALS:
+      /* Fall through. */
       case BROTLI_STATE_COMMAND_POST_WRAP_COPY:
         result = ProcessCommands(s);
         if (result == BROTLI_DECODER_NEEDS_MORE_INPUT) {
@@ -2352,7 +2356,9 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
         break;
 
       case BROTLI_STATE_COMMAND_INNER_WRITE:
+      /* Fall through. */
       case BROTLI_STATE_COMMAND_POST_WRITE_1:
+      /* Fall through. */
       case BROTLI_STATE_COMMAND_POST_WRITE_2:
         result = WriteRingBuffer(
             s, available_out, next_out, total_out, BROTLI_FALSE);
@@ -2406,7 +2412,7 @@ BrotliDecoderResult BrotliDecoderDecompressStream(
           *next_in = br->next_in;
         }
         s->state = BROTLI_STATE_DONE;
-        /* No break, continue to next state. */
+      /* Fall through. */
 
       case BROTLI_STATE_DONE:
         if (s->ringbuffer != 0) {
