@@ -15,5 +15,4 @@ FROM busybox:glibc
 
 COPY --from=builder /brotli/out/brotli /bin/brotli
 COPY --from=ssl /etc/ssl/certs /etc/ssl/certs
-RUN mkdir -p /usr/bin && ln -s /bin/sh /usr/bin/sh && ln -s /bin/sh /usr/bin/bash && ln -s /bin/sh /bin/bash
-
+RUN mkdir -p /usr/bin && ln -s /bin/sh /usr/bin/sh
